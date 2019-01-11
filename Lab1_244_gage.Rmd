@@ -1,0 +1,131 @@
+---
+title: "Lab1 244"
+author: "Gage Clawson"
+date: "1/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Objectives:
+
+- basic review (data wrangling)
+- intro to spatial data in R with sf
+- intro to shiny apps
+
+1. attach packages
+
+```{r}
+library(sf)
+library(tidyverse)
+library(leaflet)
+library(tmap)
+```
+
+2. Review: reading, exploring, wrangling and visualizing data
+
+a. read in the data
+```{r}
+wine <- read_csv("wine_data.csv")
+```
+
+b. wrangling
+
+```{r}
+
+wine_new <- wine %>%
+  select(country, province, winery, region_1, points, price) %>%
+  rename(state = province) %>%
+  filter(state %in% c("California", "Oregon", "Washington")) %>% 
+  mutate(ppd = points/price) %>% 
+  arrange(-ppd) 
+
+```
+
+c. Use group_by and summarise to find summary stats by group
+
+```{r}
+wine_summary <- wine_new %>% 
+  group_by(state) %>% 
+  summarise(
+    mean_ppd = mean(ppd, na.rm = TRUE),
+    max_ppd = max(ppd, na.rm = TRUE), 
+    min_ppd = min(ppd, na.rm = TRUE),
+    count = length(ppd)
+  )
+```
+
+d. A few gg graphics
+
+```{r}
+
+(wine_hist <- ggplot(wine_new, aes(x = ppd)) +
+  geom_histogram(aes(fill = state)) +
+   facet_wrap(~state, scales = "free")
+ 
+ 
+ )
+```
+
+new graph: scatterplot graph of price vs points, with color determined by state, adding a linear model trend line on top of it
+
+```{r}
+wine_points <- ggplot(wine_new, aes(x = price, y = points)) +
+  geom_point(aes(color = state), alpha = 0.5) +
+  scale_color_manual(values = c("royalblue", "mediumorchid1", "orange")) +
+  geom_smooth(method = "lm", aes(color = state), se = FALSE, size = 0.4) +
+  facet_wrap(~state) +
+  theme_light()
+
+wine_points
+```
+
+2. California counties (spatial data) using sf
+
+```{r}
+
+ca_counties <- st_read(dsn = ".", layer = "CA_Counties_TIGER2016")
+
+ca_land <- ca_counties %>% 
+  select(NAME, ALAND)
+
+ca_pop_inc <- read_csv("ca_pop_inc.csv") %>% 
+  rename(NAME = COUNTY)
+
+ca_df <- full_join(ca_land, ca_pop_inc) %>% 
+  select(NAME, MedFamilyIncome)
+
+# plot(ca_counties)
+
+
+
+```
+
+d. Use geom_sf to make a map in ggplot
+
+```{r}
+
+ca_income <- ggplot(ca_df) + 
+  geom_sf(aes(fill = MedFamilyIncome))
+
+ca_income
+
+ca_df_transform <- st_transform(ca_df, crs = 4326)
+
+leaflet(ca_df_transform) %>%
+  addTiles() %>%
+  addPolygons()
+
+```
+
+
+
+
+
+
+
+
