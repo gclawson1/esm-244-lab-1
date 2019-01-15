@@ -117,10 +117,36 @@ ca_income
 ca_df_transform <- st_transform(ca_df, crs = 4326)
 
 leaflet(ca_df_transform) %>%
-  addTiles() %>%
-  addPolygons()
+  addTiles() %>% #add bg
+  addPolygons(weight = 1.0, 
+              opacity = 1.0, 
+              color = "white", 
+              fillOpacity = 0.5,
+              fillColor = ~colorQuantile("YlOrRd", MedFamilyIncome)(MedFamilyIncome))
 
 ```
+
+f. ...or using tmap!
+
+```{r}
+tmap_mode("view")
+
+if (Sys.getenv("USER") != "CRAN")
+
+tm_shape(ca_df_transform) + tm_fill("MedFamilyIncome", alpha = 0.5)
+
+
+```
+
+
+###3. A Shiny app overview
+
+a. Create a new Shiny app (single file containing ui and server). 
+b. Notice that an example (Old Faithful Geyser histogram) appears. Select 'Run App' to run it - then play with the widget.
+
+c. Follow along to create a new app (notice that a subfolder is created in WD for the app) for wine prices/points.
+
+
 
 
 
